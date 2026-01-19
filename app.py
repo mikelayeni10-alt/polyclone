@@ -2,157 +2,155 @@ import streamlit as st
 import google.generativeai as genai
 import base64
 
-# --- 1. CONFIGURATION ---
-# Note: Keep your API key private in a real production environment!
-GOOGLE_API_KEY = "AIzaSyDeyyPqwixP9TyuVXZ3Ay8lhEZwCGGWQAg"
+# --- 1. CONFIG ---
+GOOGLE_API_KEY = "YOUR_API_KEY_HERE"
 genai.configure(api_key=GOOGLE_API_KEY)
 
-MODEL_NAME = "gemini-1.5-flash" 
+MODEL_NAME = "gemini-1.5-flash"
 model = genai.GenerativeModel(MODEL_NAME)
 
-# --- 2. INITIALIZE MEMORY ---
+# --- 2. STATE ---
 if "my_bots" not in st.session_state:
     st.session_state.my_bots = []
 if "current_chat_bot" not in st.session_state:
     st.session_state.current_chat_bot = None
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "open_creator" not in st.session_state:
+    st.session_state.open_creator = False
 
-# --- 3. PAGE SETUP & STYLE ---
-st.set_page_config(page_title="PolyClone", layout="centered")
+# --- 3. PAGE ---
+st.set_page_config("PolyClone", layout="centered")
 
 st.markdown("""
-    <style>
-    .stApp { background: #0f0c29; color: white; }
-    footer {visibility: hidden !important;}
-    header {visibility: hidden !important;}
-    
-    /* Chat bubble styling */
-    [data-testid="stChatMessage"] {
-        border-radius: 15px; 
-        border: 1px solid #9d50bb;
-        background-color: rgba(255, 255, 255, 0.15);
-        # backdrop-filter: blur(5px);
-        margin-bottom: 10px;
-    }
+<style>
+.stApp {
+    background: #0f0c29;
+    color: white;
+}
+header, footer { visibility: hidden; }
 
-    /* FIXED CENTER BOTTOM FAB CONTAINER */
-    .fab-wrapper {
-        position: fixed;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 999;
-    }
+/* CHAT BUBBLES */
+[data-testid="stChatMessage"] {
+    border-radius: 15px;
+    border: 1px solid #9d50bb;
+    background-color: rgba(255,255,255,0.15);
+    backdrop-filter: blur(6px);
+}
 
-    /* Style the actual Streamlit button inside the FAB wrapper */
-    div.stButton > button {
-        border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        background-color: white !important;
-        color: black !important;
-        border: 2px solid #9d50bb !important;
-        font-size: 30px !important;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
-        transition: transform 0.2s;
-    }
-    
-    div.stButton > button:hover {
-        transform: scale(1.1);
-        background-color: #f0f0f0 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+/* FLOATING PLUS BUTTON */
+#fab {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: white;
+    color: black;
+    font-size: 36px;
+    border: none;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+}
+</style>
 
-# --- 4. POPUP FOR CREATION ---
+<button id="fab">+</button>
+
+<script>
+const fab = document.getElementById("fab");
+fab.onclick = () => {
+    window.parent.postMessage({ type: "OPEN_CREATOR" }, "*");
+};
+</script>
+""", unsafe_allow_html=True)
+
+# --- 4. MESSAGE BRIDGE ---
+if st.session_state.get("_streamlit_message") == "OPEN_CREATOR":
+    st.session_state.open_creator = True
+    st.session_state["_streamlit_message"] = None
+
+# --- 5. CREATOR DIALOG ---
 @st.dialog("🎨 New Character")
 def create_character():
     name = st.text_input("Name")
-    user_pic = st.file_uploader("Upload Image (Required)", type=['png', 'jpg', 'jpeg'])
-    pers = st.text_area("Persona / Instructions")
-    
+    image = st.file_uploader("Upload Image", type=["png","jpg","jpeg"])
+    persona = st.text_area("Persona / Instructions")
+
     if st.button("Save & Launch ✨", use_container_width=True):
-        if name and pers and user_pic:
+        if name and image and persona:
             st.session_state.my_bots.append({
-                "name": name, 
-                "persona": pers, 
-                "pic": user_pic.getvalue()
+                "name": name,
+                "persona": persona,
+                "pic": image.getvalue()
             })
+            st.session_state.open_creator = False
             st.rerun()
         else:
-            st.error("Fill in all fields and upload an image!")
+            st.error("Fill everything.")
 
-# --- 5. APP LOGIC ---
+if st.session_state.open_creator:
+    create_character()
 
-# CHAT SCREEN
+# --- 6. CHAT VIEW ---
 if st.session_state.current_chat_bot:
     bot = st.session_state.current_chat_bot
-    
-    # Background logic
-    if bot.get('pic'):
-        bin_str = base64.b64encode(bot['pic']).decode()
+
+    if bot.get("pic"):
+        bg = base64.b64encode(bot["pic"]).decode()
         st.markdown(f"""
-            <style>
-            .stApp {{
-                background-image: linear-gradient(rgba(15, 12, 41, 0.85), rgba(15, 12, 41, 0.85)), url("data:image/png;base64,{bin_str}");
-                background-size: cover;
-                background-attachment: fixed;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
+        <style>
+        .stApp {{
+            background-image:
+            linear-gradient(rgba(15,12,41,.9), rgba(15,12,41,.9)),
+            url("data:image/png;base64,{bg}");
+            background-size: cover;
+            background-attachment: fixed;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns([1, 3, 1])
-    with c1:
-        if st.button("⬅️"):
-            st.session_state.current_chat_bot = None
-            st.session_state.messages = []
-            st.rerun()
-    with c2:
-        st.write(f"### {bot['name']}")
-    with c3:
-        if st.button("🧹"):
-            st.session_state.messages = []
-            st.rerun()
+    if st.button("⬅ Back"):
+        st.session_state.current_chat_bot = None
+        st.session_state.messages = []
+        st.rerun()
 
-    for message in st.session_state.messages:
-        msg_avatar = bot.get('pic') if message["role"] == "assistant" else "👤"
-        with st.chat_message(message["role"], avatar=msg_avatar):
-            st.markdown(message["content"])
+    for m in st.session_state.messages:
+        with st.chat_message(m["role"]):
+            st.markdown(m["content"])
 
-    if prompt := st.chat_input(f"Chat with {bot['name']}..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user", avatar="👤"):
-            st.markdown(prompt)
-        
-        with st.chat_message("assistant", avatar=bot.get('pic')):
-            try:
-                history = []
-                for m in st.session_state.messages[:-1]: 
-                    role = "user" if m["role"] == "user" else "model"
-                    history.append({"role": role, "parts": [m["content"]]})
-                
-                chat_session = model.start_chat(history=history)
-                full_prompt = f"(System: You are {bot['name']}. Persona: {bot['persona']}) {prompt}"
-                response = chat_session.send_message(full_prompt)
-                
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-            except Exception as e:
-                st.error(f"Error: {e}")
+    if prompt := st.chat_input("Say something..."):
+        st.session_state.messages.append({"role":"user","content":prompt})
 
-# MENU SCREEN
+        history = [
+            {"role": "user" if x["role"]=="user" else "model", "parts":[x["content"]]}
+            for x in st.session_state.messages[:-1]
+        ]
+
+        chat = model.start_chat(history=history)
+        res = chat.send_message(
+            f"(System: You are {bot['name']}. Persona: {bot['persona']}) {prompt}"
+        )
+
+        st.session_state.messages.append({"role":"assistant","content":res.text})
+        st.rerun()
+
+# --- 7. MENU ---
 else:
     st.title("🤖 PolyClone")
-    menu = st.segmented_control("Navigation", ["Explore", "My Bots"], default="My Bots")
-    st.divider()
 
-    if menu == "My Bots":
-        if not st.session_state.my_bots:
-            st.info("No bots found. Tap the + to create one!")
-        
-        for index, b in enumerate(st.session_state.my_bots):
-            with st.container(border=True):
-                col_img, col_txt, col_del = st.columns([1, 3, 1])
-                with col_img:
-                    st.image(b['pic'], width=50)
+    for i, b in enumerate(st.session_state.my_bots):
+        with st.container(border=True):
+            c1, c2, c3 = st.columns([1,3,1])
+            with c1: st.image(b["pic"], width=50)
+            with c2:
+                st.write(f"**{b['name']}**")
+                if st.button("Chat", key=f"chat{i}"):
+                    st.session_state.current_chat_bot = b
+                    st.rerun()
+            with c3:
+                if st.button("🗑", key=f"del{i}"):
+                    st.session_state.my_bots.pop(i)
+                    st.rerun()
