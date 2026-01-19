@@ -6,7 +6,7 @@ import base64
 GOOGLE_API_KEY = "AIzaSyDeyyPqwixP9TyuVXZ3Ay8lhEZwCGGWQAg"
 genai.configure(api_key=GOOGLE_API_KEY)
 
-MODEL_NAME = "gemini-2.5-flash" 
+MODEL_NAME = "gemini-1.5-flash" 
 model = genai.GenerativeModel(MODEL_NAME)
 
 # --- 2. INITIALIZE MEMORY ---
@@ -26,7 +26,25 @@ st.markdown("""
     footer {visibility: hidden !important;}
     header {visibility: hidden !important;}
     
-    /* THE FIX: Force the container to the very bottom of the viewport */
+    /* Search Bar Styling */
+    div[data-testid="stTextInput"] input {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: white;
+        border-radius: 10px;
+        border: 1px solid rgba(157, 80, 187, 0.3);
+    }
+
+    /* Chat bubble styling */
+    [data-testid="stChatMessage"] {
+        border-radius: 15px; 
+        border: 1px solid #9d50bb;
+        background-color: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(5px);
+        margin-bottom: 10px;
+        width: 90%;
+    }
+
+    /* THE FAB CONTAINER - PINNED TO THE VERY BOTTOM */
     .bottom-button-container {
         position: fixed !important;
         bottom: 20px !important;
@@ -75,6 +93,7 @@ def create_character():
 
 # --- 5. APP LOGIC ---
 
+# CHAT SCREEN
 if st.session_state.current_chat_bot:
     bot = st.session_state.current_chat_bot
     if bot.get('pic'):
@@ -99,37 +118,45 @@ if st.session_state.current_chat_bot:
 
     if prompt := st.chat_input(f"Chat with {bot['name']}..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user", avatar="👤"): st.markdown(prompt)
-        with st.chat_message("assistant", avatar=bot.get('pic')):
-            try:
-                history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
-                chat_session = model.start_chat(history=history)
-                response = chat_session.send_message(f"(System: You are {bot['name']}. Persona: {bot['persona']}) {prompt}")
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-            except Exception as e: st.error(f"Error: {e}")
+        st.rerun()
 
+# MAIN MENU
 else:
     st.title("🤖 PolyClone")
     menu = st.segmented_control("Navigation", ["Explore", "My Bots"], default="My Bots")
-    st.divider()
-
+    
     if menu == "My Bots":
+        # SEARCH BAR
+        search_query = st.text_input("🔍 Search your bots...", placeholder="Type a name...")
+        st.divider()
+
+        # Filter the bots based on search
+        filtered_bots = [
+            (idx, b) for idx, b in enumerate(st.session_state.my_bots) 
+            if search_query.lower() in b['name'].lower()
+        ]
+
         if not st.session_state.my_bots:
             st.info("No bots found. Tap the + to create one!")
-        for index, b in enumerate(st.session_state.my_bots):
-            with st.container(border=True):
-                col_img, col_txt, col_del = st.columns([1, 3, 1])
-                with col_img: st.image(b['pic'], width=50)
-                with col_txt:
-                    st.write(f"**{b['name']}**")
-                    if st.button(f"Chat", key=f"chat_{index}"):
-                        st.session_state.current_chat_bot = b
-                        st.rerun()
-                with col_del:
-                    if st.button("🗑️", key=f"del_{index}"):
-                        st.session_state.my_bots.pop(index)
-                        st.rerun()
+        elif not filtered_bots:
+            st.warning("No matches found for that name.")
+        else:
+            for index, b in filtered_bots:
+                with st.container(border=True):
+                    col_img, col_txt, col_del = st.columns([1, 3, 1])
+                    with col_img: st.image(b['pic'], width=50)
+                    with col_txt:
+                        st.write(f"**{b['name']}**")
+                        if st.button(f"Chat", key=f"chat_{index}"):
+                            st.session_state.current_chat_bot = b
+                            st.rerun()
+                    with col_del:
+                        if st.button("🗑️", key=f"del_{index}"):
+                            st.session_state.my_bots.pop(index)
+                            st.rerun()
+    else:
+        st.divider()
+        st.info("Welcome to the PolyClone Beta.")
     
     # THE FLOATING BUTTON AT THE VERY BOTTOM GLASS
     st.markdown('<div class="bottom-button-container">', unsafe_allow_html=True)
