@@ -168,4 +168,76 @@ if st.session_state.current_chat_bot:
         with st.chat_message("user"): st.markdown(prompt)
         with st.chat_message("assistant"):
             history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
-            chat_session =
+            chat_session = model.start_chat(history=history)
+            response = chat_session.send_message(f"(You are {bot['name']}. Persona: {bot['persona']}) {prompt}")
+            st.markdown(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+
+# 2. MAIN VIEWS
+else:
+    # Sticky Top Header
+    st.markdown('<div class="search-container">', unsafe_allow_html=True)
+    search_query = st.text_input("", placeholder="🔍 Find characters...", label_visibility="collapsed")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if st.session_state.active_tab == "Home":
+        st.markdown("<h2 style='margin-left: 10px;'>Discover</h2>", unsafe_allow_html=True)
+        
+        filtered_bots = [b for b in st.session_state.my_bots if search_query.lower() in b['name'].lower()]
+        
+        if not filtered_bots:
+            st.info("No characters found. Tap '+' to create one!")
+        else:
+            # Grid Display
+            cols = st.columns(2) 
+            for i, bot in enumerate(filtered_bots):
+                with cols[i % 2]:
+                    st.markdown('<div class="char-card">', unsafe_allow_html=True)
+                    st.image(bot['pic'], use_container_width=True)
+                    st.markdown(f"<div style='padding:15px; font-weight:600; font-size:1.1rem;'>{bot['name']}</div>", unsafe_allow_html=True)
+                    if st.button(f"Chat Now", key=f"chat_{i}", use_container_width=True):
+                        st.session_state.current_chat_bot = bot
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+    elif st.session_state.active_tab == "Chats":
+        st.markdown("<h2 style='margin-left: 10px;'>My Chats</h2>", unsafe_allow_html=True)
+        if not st.session_state.my_bots:
+            st.info("Your list is empty.")
+        else:
+            for i, bot in enumerate(st.session_state.my_bots):
+                with st.container():
+                    c1, c2, c3 = st.columns([1, 4, 1])
+                    with c1: st.image(bot['pic'], width=60)
+                    with c2:
+                        st.markdown(f"**{bot['name']}**")
+                        st.caption("Active conversation")
+                    with c3:
+                        if st.button("Open", key=f"hist_{i}"):
+                            st.session_state.current_chat_bot = bot
+                            st.rerun()
+                    st.divider()
+
+    # Padding for the bottom nav bar
+    st.markdown("<br><br><br><br>", unsafe_allow_html=True)
+
+    # 3. PREMIUM BOTTOM NAV BAR
+    st.markdown('<div class="nav-bar">', unsafe_allow_html=True)
+    nb_col1, nb_col2, nb_col3 = st.columns([1, 1, 1])
+    
+    with nb_col1:
+        if st.button("🏠 Home", key="nav_home"):
+            st.session_state.active_tab = "Home"
+            st.rerun()
+    
+    with nb_col2:
+        st.markdown('<div class="fab-button">', unsafe_allow_html=True)
+        if st.button("＋", key="nav_add"):
+            create_character()
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with nb_col3:
+        if st.button("💬 Chats", key="nav_chats"):
+            st.session_state.active_tab = "Chats"
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
