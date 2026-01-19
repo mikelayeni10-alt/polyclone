@@ -25,6 +25,7 @@ st.markdown("""
     .stApp { background: #0f0c29; color: white; }
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    
     /* Chat bubble styling */
     [data-testid="stChatMessage"] {
         border-radius: 15px; 
@@ -34,31 +35,26 @@ st.markdown("""
         margin-bottom: 10px;
         width: 90%;
     }
-    /* Mobile tap targets */
-    .stButton button {
-        width: 100%;
-        border-radius: 10px;
-        height: 3em;
-    }
+
     /* Floating Action Button Styling */
     .fab-container {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
+        bottom: 30px;
+        right: 30px;
         z-index: 999;
     }
-    .fab-button {
+    
+    /* Style the button to be a white circle with black text */
+    .stButton button[kind="primary"] {
         background-color: white !important;
         color: black !important;
         border-radius: 50% !important;
         width: 60px !important;
         height: 60px !important;
         font-size: 30px !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        font-weight: bold !important;
         border: none !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -70,10 +66,12 @@ def create_character():
     user_pic = st.file_uploader("Upload Image (Required)", type=['png', 'jpg', 'jpeg'])
     pers = st.text_area("Persona / Instructions")
     
-    if st.button("Save & Launch ✨"):
+    if st.button("Save & Launch ✨", use_container_width=True):
         if name and pers and user_pic:
             st.session_state.my_bots.append({
-                "name": name, "persona": pers, "pic": user_pic.getvalue()
+                "name": name, 
+                "persona": pers, 
+                "pic": user_pic.getvalue()
             })
             st.rerun()
         else:
@@ -97,7 +95,7 @@ if st.session_state.current_chat_bot:
             </style>
             """, unsafe_allow_html=True)
 
-    # Top Navigation Bar for Chat
+    # Top Navigation Bar
     c1, c2, c3 = st.columns([1, 3, 1])
     with c1:
         if st.button("⬅️"):
@@ -111,7 +109,7 @@ if st.session_state.current_chat_bot:
             st.session_state.messages = []
             st.rerun()
 
-    # Display Chat History
+    # Display Chat
     for message in st.session_state.messages:
         msg_avatar = bot.get('pic') if message["role"] == "assistant" else "👤"
         with st.chat_message(message["role"], avatar=msg_avatar):
@@ -141,7 +139,6 @@ if st.session_state.current_chat_bot:
 # MENU SCREEN
 else:
     st.title("🤖 PolyClone")
-    # REMOVED CREATE FROM SEGMENTED CONTROL
     menu = st.segmented_control("Navigation", ["Explore", "My Bots"], default="My Bots")
     st.divider()
 
@@ -156,4 +153,18 @@ else:
                     st.image(b['pic'], width=50)
                 with col_txt:
                     st.write(f"**{b['name']}**")
-                    if st.button(f"Chat", key=f"chat_{index}")
+                    if st.button(f"Chat", key=f"chat_{index}"):
+                        st.session_state.current_chat_bot = b
+                        st.rerun()
+                with col_del:
+                    if st.button("🗑️", key=f"del_{index}"):
+                        st.session_state.my_bots.pop(index)
+                        st.rerun()
+    else:
+        st.info("Welcome to the PolyClone Beta.")
+
+    # FLOATING ACTION BUTTON
+    st.markdown('<div class="fab-container">', unsafe_allow_html=True)
+    if st.button("＋", key="fab", type="primary"):
+        create_character()
+    st.markdown('</div>', unsafe_allow_html=True)
