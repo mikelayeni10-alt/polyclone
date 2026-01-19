@@ -6,7 +6,7 @@ import base64
 GOOGLE_API_KEY = "AIzaSyDeyyPqwixP9TyuVXZ3Ay8lhEZwCGGWQAg"
 genai.configure(api_key=GOOGLE_API_KEY)
 
-MODEL_NAME = "gemini-2.5-flash" 
+MODEL_NAME = "gemini-1.5-flash" 
 model = genai.GenerativeModel(MODEL_NAME)
 
 # --- 2. INITIALIZE MEMORY ---
@@ -22,9 +22,10 @@ st.set_page_config(page_title="PolyClone", layout="centered")
 
 st.markdown("""
     <style>
+    /* Main Background */
     .stApp { background: #0f0c29; color: white; }
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    footer {visibility: hidden !important;}
+    header {visibility: hidden !important;}
     
     /* Chat bubble styling */
     [data-testid="stChatMessage"] {
@@ -36,30 +37,43 @@ st.markdown("""
         width: 90%;
     }
 
-    /* Centered Floating Action Button Container */
+    /* THE FAB BUTTON CONTAINER - FORCED CENTER BOTTOM */
     .fab-container {
-        position: fixed;
-        bottom: 10px; /* 10px padding from bottom */
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 999;
+        position: fixed !important;
+        bottom: 10px !important; 
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 999999 !important;
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+        pointer-events: none !important; /* Let clicks pass through container */
     }
     
-    /* Small, Thick, Rounded White Circle Button */
-    .stButton button[kind="primary"] {
+    /* The Button itself */
+    .fab-container button {
+        pointer-events: auto !important; /* Re-enable clicks for button */
         background-color: white !important;
         color: black !important;
         border-radius: 50% !important;
-        width: 50px !important; /* Smaller size */
-        height: 50px !important; /* Smaller size */
-        font-size: 28px !important; /* Thick icon size */
+        width: 50px !important; 
+        height: 50px !important;
+        min-width: 50px !important;
+        max-width: 50px !important;
+        font-size: 32px !important; /* Large for thick look */
         font-weight: 900 !important; /* Extra thick */
         border: none !important;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding-bottom: 4px !important; /* Fine-tune cross alignment */
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.6) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0px !important;
+        line-height: 0px !important;
+        transition: transform 0.2s !important;
+    }
+
+    .fab-container button:active {
+        transform: scale(0.9) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -166,8 +180,8 @@ else:
     else:
         st.info("Welcome to the PolyClone Beta.")
 
-    # FLOATING ACTION BUTTON (Centered)
+    # FLOATING ACTION BUTTON (FORCED WHITE CIRCLE)
     st.markdown('<div class="fab-container">', unsafe_allow_html=True)
-    if st.button("＋", key="fab", type="primary"):
+    if st.button("＋", key="fab_btn"):
         create_character()
     st.markdown('</div>', unsafe_allow_html=True)
