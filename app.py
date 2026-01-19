@@ -6,7 +6,7 @@ import base64
 GOOGLE_API_KEY = "AIzaSyDeyyPqwixP9TyuVXZ3Ay8lhEZwCGGWQAg"
 genai.configure(api_key=GOOGLE_API_KEY)
 
-MODEL_NAME = "gemini-2.5-flash" 
+MODEL_NAME = "gemini-1.5-flash" 
 model = genai.GenerativeModel(MODEL_NAME)
 
 # --- 2. INITIALIZE MEMORY ---
@@ -40,10 +40,46 @@ st.markdown("""
         border-radius: 10px;
         height: 3em;
     }
+    /* Floating Action Button Styling */
+    .fab-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999;
+    }
+    .fab-button {
+        background-color: white !important;
+        color: black !important;
+        border-radius: 50% !important;
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 30px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none !important;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. APP LOGIC ---
+# --- 4. POPUP FOR CREATION ---
+@st.dialog("🎨 New Character")
+def create_character():
+    name = st.text_input("Name")
+    user_pic = st.file_uploader("Upload Image (Required)", type=['png', 'jpg', 'jpeg'])
+    pers = st.text_area("Persona / Instructions")
+    
+    if st.button("Save & Launch ✨"):
+        if name and pers and user_pic:
+            st.session_state.my_bots.append({
+                "name": name, "persona": pers, "pic": user_pic.getvalue()
+            })
+            st.rerun()
+        else:
+            st.error("Fill in all fields and upload an image!")
+
+# --- 5. APP LOGIC ---
 
 # CHAT SCREEN
 if st.session_state.current_chat_bot:
@@ -105,28 +141,13 @@ if st.session_state.current_chat_bot:
 # MENU SCREEN
 else:
     st.title("🤖 PolyClone")
-    menu = st.segmented_control("Navigation", ["Explore", "My Bots", "Create"], default="My Bots")
+    # REMOVED CREATE FROM SEGMENTED CONTROL
+    menu = st.segmented_control("Navigation", ["Explore", "My Bots"], default="My Bots")
     st.divider()
 
-    if menu == "Create":
-        st.subheader("🎨 New Character")
-        name = st.text_input("Name")
-        user_pic = st.file_uploader("Upload Image (Required)", type=['png', 'jpg', 'jpeg'])
-        pers = st.text_area("Persona / Instructions")
-        
-        if st.button("Save & Launch ✨"):
-            if name and pers and user_pic:
-                st.session_state.my_bots.append({
-                    "name": name, "persona": pers, "pic": user_pic.getvalue()
-                })
-                st.balloons()
-                st.success("Bot Created!")
-            else:
-                st.error("Fill in all fields and upload an image!")
-
-    elif menu == "My Bots":
+    if menu == "My Bots":
         if not st.session_state.my_bots:
-            st.info("No bots found. Go to 'Create'!")
+            st.info("No bots found. Tap the + to create one!")
         
         for index, b in enumerate(st.session_state.my_bots):
             with st.container(border=True):
@@ -135,12 +156,4 @@ else:
                     st.image(b['pic'], width=50)
                 with col_txt:
                     st.write(f"**{b['name']}**")
-                    if st.button(f"Chat", key=f"chat_{index}"):
-                        st.session_state.current_chat_bot = b
-                        st.rerun()
-                with col_del:
-                    if st.button("🗑️", key=f"del_{index}"):
-                        st.session_state.my_bots.pop(index)
-                        st.rerun()
-    else:
-        st.info("Welcome to the PolyClone Beta.")
+                    if st.button(f"Chat", key=f"chat_{index}")
