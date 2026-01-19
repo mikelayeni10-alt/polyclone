@@ -26,12 +26,21 @@ st.markdown("""
     footer {visibility: hidden !important;}
     header {visibility: hidden !important;}
     
-    /* Search Bar Styling */
+    /* Sticky Search Bar Styling at the Top */
+    div[data-testid="stVerticalBlock"] > div:first-child {
+        position: sticky;
+        top: 0;
+        z-index: 999;
+        background-color: #0f0c29;
+        padding-bottom: 10px;
+    }
+
     div[data-testid="stTextInput"] input {
-        background-color: rgba(255, 255, 255, 0.05);
+        background-color: rgba(255, 255, 255, 0.1);
         color: white;
-        border-radius: 10px;
-        border: 1px solid rgba(157, 80, 187, 0.3);
+        border-radius: 12px;
+        border: 1px solid rgba(157, 80, 187, 0.5);
+        height: 45px;
     }
 
     /* Chat bubble styling */
@@ -44,7 +53,7 @@ st.markdown("""
         width: 90%;
     }
 
-    /* THE FAB CONTAINER - PINNED TO THE VERY BOTTOM */
+    /* THE FAB CONTAINER - CENTER BOTTOM */
     .bottom-button-container {
         position: fixed !important;
         bottom: 20px !important;
@@ -122,14 +131,15 @@ if st.session_state.current_chat_bot:
 
 # MAIN MENU
 else:
+    # 1. SEARCH BAR AT THE VERY TOP
+    search_query = st.text_input("", placeholder="🔍 Search characters...", label_visibility="collapsed")
+    
+    # 2. TITLE AND NAVIGATION
     st.title("🤖 PolyClone")
     menu = st.segmented_control("Navigation", ["Explore", "My Bots"], default="My Bots")
+    st.divider()
     
     if menu == "My Bots":
-        # SEARCH BAR
-        search_query = st.text_input("🔍 Search your bots...", placeholder="Type a name...")
-        st.divider()
-
         # Filter the bots based on search
         filtered_bots = [
             (idx, b) for idx, b in enumerate(st.session_state.my_bots) 
@@ -139,7 +149,7 @@ else:
         if not st.session_state.my_bots:
             st.info("No bots found. Tap the + to create one!")
         elif not filtered_bots:
-            st.warning("No matches found for that name.")
+            st.warning("No matches found.")
         else:
             for index, b in filtered_bots:
                 with st.container(border=True):
@@ -155,10 +165,9 @@ else:
                             st.session_state.my_bots.pop(index)
                             st.rerun()
     else:
-        st.divider()
         st.info("Welcome to the PolyClone Beta.")
     
-    # THE FLOATING BUTTON AT THE VERY BOTTOM GLASS
+    # THE CENTERED FAB
     st.markdown('<div class="bottom-button-container">', unsafe_allow_html=True)
     if st.button("＋", key="fixed_plus_btn"):
         create_character()
