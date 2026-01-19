@@ -3,6 +3,7 @@ import google.generativeai as genai
 import base64
 
 # --- 1. CONFIGURATION ---
+# Note: Keep your API key private in a real production environment!
 GOOGLE_API_KEY = "AIzaSyDeyyPqwixP9TyuVXZ3Ay8lhEZwCGGWQAg"
 genai.configure(api_key=GOOGLE_API_KEY)
 
@@ -31,44 +32,35 @@ st.markdown("""
         border-radius: 15px; 
         border: 1px solid #9d50bb;
         background-color: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(5px);
+        # backdrop-filter: blur(5px);
         margin-bottom: 10px;
-        width: 90%;
     }
 
-    /* THE FAB CONTAINER - PERFECT CENTER BOTTOM */
-    .fab-container {
-        position: fixed !important;
-        bottom: 20px !important; 
-        left: 0 !important;
-        right: 0 !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        z-index: 1000000 !important;
-        pointer-events: none !important;
+    /* FIXED CENTER BOTTOM FAB CONTAINER */
+    .fab-wrapper {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 999;
     }
-    
-    /* The White Circle Plus Button */
-    .fab-container button {
-        pointer-events: auto !important;
+
+    /* Style the actual Streamlit button inside the FAB wrapper */
+    div.stButton > button {
+        border-radius: 50% !important;
+        width: 60px !important;
+        height: 60px !important;
         background-color: white !important;
         color: black !important;
-        border-radius: 50% !important;
-        width: 55px !important; 
-        height: 55px !important;
-        min-width: 55px !important;
-        max-width: 55px !important;
-        font-size: 35px !important; 
-        font-weight: bold !important;
-        border: none !important;
-        box-shadow: 0px 5px 15px rgba(0,0,0,0.5) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        line-height: 0 !important;
-        padding: 0 !important;
-        padding-bottom: 5px !important; /* Visual vertical alignment of the + */
+        border: 2px solid #9d50bb !important;
+        font-size: 30px !important;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
+        transition: transform 0.2s;
+    }
+    
+    div.stButton > button:hover {
+        transform: scale(1.1);
+        background-color: #f0f0f0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -97,6 +89,7 @@ def create_character():
 if st.session_state.current_chat_bot:
     bot = st.session_state.current_chat_bot
     
+    # Background logic
     if bot.get('pic'):
         bin_str = base64.b64encode(bot['pic']).decode()
         st.markdown(f"""
@@ -163,20 +156,3 @@ else:
                 col_img, col_txt, col_del = st.columns([1, 3, 1])
                 with col_img:
                     st.image(b['pic'], width=50)
-                with col_txt:
-                    st.write(f"**{b['name']}**")
-                    if st.button(f"Chat", key=f"chat_{index}"):
-                        st.session_state.current_chat_bot = b
-                        st.rerun()
-                with col_del:
-                    if st.button("🗑️", key=f"del_{index}"):
-                        st.session_state.my_bots.pop(index)
-                        st.rerun()
-    else:
-        st.info("Welcome to the PolyClone Beta.")
-
-    # THE CENTERED FAB
-    st.markdown('<div class="fab-container">', unsafe_allow_html=True)
-    if st.button("＋", key="fab_plus"):
-        create_character()
-    st.markdown('</div>', unsafe_allow_html=True)
