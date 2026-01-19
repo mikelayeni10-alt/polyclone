@@ -16,6 +16,8 @@ if "current_chat_bot" not in st.session_state:
     st.session_state.current_chat_bot = None
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "active_tab" not in st.session_state:
+    st.session_state.active_tab = "Home"
 
 # --- 3. PAGE SETUP & STYLE ---
 st.set_page_config(page_title="PolyClone", layout="wide") 
@@ -51,9 +53,7 @@ st.markdown("""
         overflow: hidden;
         transition: 0.3s;
     }
-    .char-card:hover {
-        border-color: #9d50bb;
-    }
+    .char-card:hover { border-color: #9d50bb; }
     
     .stImage > img {
         border-radius: 12px 12px 0px 0px;
@@ -62,28 +62,34 @@ st.markdown("""
         width: 100%;
     }
 
-    /* FAB Button */
-    .bottom-button-container {
+    /* BOTTOM NAVIGATION BAR */
+    .nav-wrapper {
         position: fixed !important;
-        bottom: 25px !important;
+        bottom: 0 !important;
         left: 0 !important;
         right: 0 !important;
+        background-color: #1c1c1e;
+        border-top: 1px solid #2c2c2e;
         display: flex !important;
-        justify-content: center !important;
-        z-index: 1000 !important;
-        pointer-events: none !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        padding: 10px 0px !important;
+        z-index: 1000000 !important;
     }
-    .bottom-button-container button {
-        pointer-events: auto !important;
-        background-color: #ffffff !important;
-        color: #000000 !important;
+    
+    /* Style for Nav Buttons */
+    .stButton button { width: 100% !important; border: none !important; background: transparent !important; color: white !important; }
+    
+    /* Specific Plus Button Styling */
+    .plus-btn button {
+        background-color: white !important;
+        color: black !important;
         border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        font-size: 32px !important;
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 28px !important;
         font-weight: bold !important;
-        box-shadow: 0px 4px 20px rgba(0,0,0,0.8) !important;
-        border: none !important;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.5) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -106,21 +112,20 @@ def create_character():
 
 # --- 5. APP LOGIC ---
 
+# 1. CHAT INTERFACE (When a bot is selected)
 if st.session_state.current_chat_bot:
     bot = st.session_state.current_chat_bot
-    # Simplified chat navigation for clean look
     if st.button("⬅ Back"):
         st.session_state.current_chat_bot = None
         st.session_state.messages = []
         st.rerun()
     
-    st.subheader(f"Chatting with {bot['name']}")
-    
+    st.subheader(f"Chat with {bot['name']}")
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input("Say something..."):
+    if prompt := st.chat_input("Message..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"): st.markdown(prompt)
         with st.chat_message("assistant"):
@@ -130,35 +135,67 @@ if st.session_state.current_chat_bot:
             st.markdown(response.text)
             st.session_state.messages.append({"role": "assistant", "content": response.text})
 
+# 2. MAIN VIEWS (Home or Chats list)
 else:
-    # 1. TOP SEARCH
+    # Top Search
     st.markdown('<div class="search-container">', unsafe_allow_html=True)
     search_query = st.text_input("", placeholder="🔍 Search characters...", label_visibility="collapsed")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 2. MAIN HUB
-    st.title("For You")
-    st.divider()
+    if st.session_state.active_tab == "Home":
+        st.title("For You")
+        st.divider()
+        # This acts as the "Discover" feed
+        filtered_bots = [b for b in st.session_state.my_bots if search_query.lower() in b['name'].lower()]
+        
+        if not filtered_bots:
+            st.info("No characters found. Create one to get started!")
+        else:
+            cols = st.columns(2) 
+            for i, bot in enumerate(filtered_bots):
+                with cols[i % 2]:
+                    st.markdown('<div class="char-card">', unsafe_allow_html=True)
+                    st.image(bot['pic'], use_container_width=True)
+                    st.markdown(f"<div style='padding:12px;'><b>{bot['name']}</b></div>", unsafe_allow_html=True)
+                    if st.button(f"Chat", key=f"btn_{i}", use_container_width=True):
+                        st.session_state.current_chat_bot = bot
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
 
-    # 3. CHARACTER GRID (2 per row)
-    filtered_bots = [b for b in st.session_state.my_bots if search_query.lower() in b['name'].lower()]
+    elif st.session_state.active_tab == "Chats":
+        st.title("My Chats")
+        st.divider()
+        # List view for existing characters you've talked to
+        if not st.session_state.my_bots:
+            st.info("No active chats yet.")
+        else:
+            for i, bot in enumerate(st.session_state.my_bots):
+                with st.container(border=True):
+                    c1, c2 = st.columns([1, 4])
+                    with c1: st.image(bot['pic'], width=60)
+                    with c2:
+                        st.write(f"**{bot['name']}**")
+                        if st.button("Open Chat", key=f"open_{i}"):
+                            st.session_state.current_chat_bot = bot
+                            st.rerun()
 
-    if not filtered_bots:
-        st.info("Your library is empty. Click the button below to add a character!")
-    else:
-        cols = st.columns(2) 
-        for i, bot in enumerate(filtered_bots):
-            with cols[i % 2]:
-                st.markdown('<div class="char-card">', unsafe_allow_html=True)
-                st.image(bot['pic'], use_container_width=True)
-                st.markdown(f"<div style='padding:12px;'><b>{bot['name']}</b></div>", unsafe_allow_html=True)
-                if st.button(f"Chat", key=f"btn_{i}", use_container_width=True):
-                    st.session_state.current_chat_bot = bot
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-
-    # 4. BOTTOM CENTER FAB
-    st.markdown('<div class="bottom-button-container">', unsafe_allow_html=True)
-    if st.button("＋", key="fab_main"):
-        create_character()
+    # 3. BOTTOM NAV BAR
+    st.markdown('<div class="nav-wrapper">', unsafe_allow_html=True)
+    nb_col1, nb_col2, nb_col3 = st.columns(3)
+    
+    with nb_col1:
+        if st.button("🏠 Home"):
+            st.session_state.active_tab = "Home"
+            st.rerun()
+    
+    with nb_col2:
+        st.markdown('<div class="plus-btn">', unsafe_allow_html=True)
+        if st.button("＋", key="nav_create"):
+            create_character()
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with nb_col3:
+        if st.button("💬 Chats"):
+            st.session_state.active_tab = "Chats"
+            st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
