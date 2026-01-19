@@ -19,183 +19,153 @@ if "messages" not in st.session_state:
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = "Home"
 
-# --- 3. PAGE SETUP & STYLE ---
-st.set_page_config(page_title="PolyClone", layout="wide") 
+# --- 3. PAGE SETUP & PREMIUM MOBILE STYLE ---
+st.set_page_config(page_title="PolyClone", layout="wide", initial_sidebar_state="collapsed") 
 
 st.markdown("""
     <style>
-    .stApp { background-color: #0a0a0b; color: #ffffff; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+    /* Global smooth feel */
+    html, body, [data-testid="stAppViewContainer"] {
+        background-color: #08080a;
+        font-family: 'Inter', sans-serif;
+        color: #f1f1f1;
+    }
     footer {visibility: hidden !important;}
     header {visibility: hidden !important;}
 
-    /* Sticky Search Header */
+    /* Top Search Bar Refinement */
     .search-container {
         position: sticky;
         top: 0;
-        background-color: #0a0a0b;
-        padding: 15px 0px;
-        z-index: 99;
+        background: rgba(8, 8, 10, 0.8);
+        backdrop-filter: blur(15px);
+        padding: 20px 15px;
+        z-index: 1000;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
     
     div[data-testid="stTextInput"] input {
-        background-color: #1c1c1e;
-        color: white;
-        border-radius: 20px;
-        border: 1px solid #3a3a3c;
+        background-color: #161618 !important;
+        color: white !important;
+        border-radius: 14px !important;
+        border: 1px solid #28282b !important;
+        padding: 12px !important;
+        transition: all 0.3s ease;
+    }
+    div[data-testid="stTextInput"] input:focus {
+        border-color: #9d50bb !important;
+        box-shadow: 0 0 10px rgba(157, 80, 187, 0.2) !important;
     }
 
-    /* Character Card Grid */
+    /* Premium Character Cards */
     .char-card {
-        background-color: #1c1c1e;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        border: 1px solid #2c2c2e;
+        background: #121214;
+        border-radius: 20px;
+        margin-bottom: 15px;
+        border: 1px solid rgba(255,255,255,0.05);
         overflow: hidden;
-        transition: 0.3s;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .char-card:hover { border-color: #9d50bb; }
+    .char-card:hover {
+        transform: scale(1.02);
+        border-color: rgba(157, 80, 187, 0.5);
+    }
     
     .stImage > img {
-        border-radius: 12px 12px 0px 0px;
-        object-fit: cover;
-        height: 220px;
+        height: 240px;
         width: 100%;
+        object-fit: cover;
+        transition: filter 0.3s ease;
     }
 
-    /* BOTTOM NAVIGATION BAR */
-    .nav-wrapper {
+    /* High-End Bottom Nav Bar */
+    .nav-bar {
         position: fixed !important;
         bottom: 0 !important;
         left: 0 !important;
         right: 0 !important;
-        background-color: #1c1c1e;
-        border-top: 1px solid #2c2c2e;
+        height: 85px;
+        background: rgba(18, 18, 20, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
         display: flex !important;
         justify-content: space-around !important;
         align-items: center !important;
-        padding: 10px 0px !important;
-        z-index: 1000000 !important;
+        z-index: 100000;
+        padding-bottom: 15px; /* Mobile safe area padding */
     }
     
-    /* Style for Nav Buttons */
-    .stButton button { width: 100% !important; border: none !important; background: transparent !important; color: white !important; }
-    
-    /* Specific Plus Button Styling */
-    .plus-btn button {
-        background-color: white !important;
-        color: black !important;
+    /* Nav Button Overrides */
+    .stButton button {
+        background: transparent !important;
+        border: none !important;
+        color: #888888 !important;
+        font-weight: 600 !important;
+        transition: color 0.3s ease;
+    }
+    .stButton button:hover, .stButton button:active {
+        color: #ffffff !important;
+    }
+
+    /* Premium FAB (Center Button) */
+    .fab-button button {
+        background: #ffffff !important;
+        color: #000000 !important;
         border-radius: 50% !important;
-        width: 50px !important;
-        height: 50px !important;
-        font-size: 28px !important;
-        font-weight: bold !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.5) !important;
+        width: 58px !important;
+        height: 58px !important;
+        font-size: 32px !important;
+        font-weight: 800 !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transform: translateY(-10px); /* Lift it above the nav bar line */
     }
+
+    /* Hide default scrollbar for cleaner app feel */
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- 4. POPUP FOR CREATION ---
-@st.dialog("🎨 New Character")
+@st.dialog("✨ Create Character")
 def create_character():
-    name = st.text_input("Name")
-    user_pic = st.file_uploader("Upload Image", type=['png', 'jpg', 'jpeg'])
-    pers = st.text_area("Persona")
+    name = st.text_input("Name", placeholder="Character name...")
+    user_pic = st.file_uploader("Upload Profile Image", type=['png', 'jpg', 'jpeg'])
+    pers = st.text_area("Persona", placeholder="How do they act? (e.g., 'A witty AI assistant', 'A mysterious traveler')")
     
-    if st.button("Create ✨", use_container_width=True):
+    if st.button("Initialize ✨", use_container_width=True):
         if name and pers and user_pic:
             st.session_state.my_bots.append({
                 "name": name, "persona": pers, "pic": user_pic.getvalue()
             })
+            st.success("Character Created!")
             st.rerun()
         else:
-            st.error("Missing info!")
+            st.error("Please fill all fields.")
 
 # --- 5. APP LOGIC ---
 
-# 1. CHAT INTERFACE (When a bot is selected)
+# 1. CHAT INTERFACE
 if st.session_state.current_chat_bot:
     bot = st.session_state.current_chat_bot
-    if st.button("⬅ Back"):
+    st.markdown(f"### 💬 {bot['name']}")
+    if st.button("⬅ Back to Home"):
         st.session_state.current_chat_bot = None
         st.session_state.messages = []
         st.rerun()
     
-    st.subheader(f"Chat with {bot['name']}")
+    st.divider()
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input("Message..."):
+    if prompt := st.chat_input("Write something..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"): st.markdown(prompt)
         with st.chat_message("assistant"):
             history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
-            chat_session = model.start_chat(history=history)
-            response = chat_session.send_message(f"(You are {bot['name']}. Persona: {bot['persona']}) {prompt}")
-            st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
-
-# 2. MAIN VIEWS (Home or Chats list)
-else:
-    # Top Search
-    st.markdown('<div class="search-container">', unsafe_allow_html=True)
-    search_query = st.text_input("", placeholder="🔍 Search characters...", label_visibility="collapsed")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    if st.session_state.active_tab == "Home":
-        st.title("For You")
-        st.divider()
-        # This acts as the "Discover" feed
-        filtered_bots = [b for b in st.session_state.my_bots if search_query.lower() in b['name'].lower()]
-        
-        if not filtered_bots:
-            st.info("No characters found. Create one to get started!")
-        else:
-            cols = st.columns(2) 
-            for i, bot in enumerate(filtered_bots):
-                with cols[i % 2]:
-                    st.markdown('<div class="char-card">', unsafe_allow_html=True)
-                    st.image(bot['pic'], use_container_width=True)
-                    st.markdown(f"<div style='padding:12px;'><b>{bot['name']}</b></div>", unsafe_allow_html=True)
-                    if st.button(f"Chat", key=f"btn_{i}", use_container_width=True):
-                        st.session_state.current_chat_bot = bot
-                        st.rerun()
-                    st.markdown('</div>', unsafe_allow_html=True)
-
-    elif st.session_state.active_tab == "Chats":
-        st.title("My Chats")
-        st.divider()
-        # List view for existing characters you've talked to
-        if not st.session_state.my_bots:
-            st.info("No active chats yet.")
-        else:
-            for i, bot in enumerate(st.session_state.my_bots):
-                with st.container(border=True):
-                    c1, c2 = st.columns([1, 4])
-                    with c1: st.image(bot['pic'], width=60)
-                    with c2:
-                        st.write(f"**{bot['name']}**")
-                        if st.button("Open Chat", key=f"open_{i}"):
-                            st.session_state.current_chat_bot = bot
-                            st.rerun()
-
-    # 3. BOTTOM NAV BAR
-    st.markdown('<div class="nav-wrapper">', unsafe_allow_html=True)
-    nb_col1, nb_col2, nb_col3 = st.columns(3)
-    
-    with nb_col1:
-        if st.button("🏠 Home"):
-            st.session_state.active_tab = "Home"
-            st.rerun()
-    
-    with nb_col2:
-        st.markdown('<div class="plus-btn">', unsafe_allow_html=True)
-        if st.button("＋", key="nav_create"):
-            create_character()
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with nb_col3:
-        if st.button("💬 Chats"):
-            st.session_state.active_tab = "Chats"
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+            chat_session =
