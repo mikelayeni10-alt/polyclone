@@ -6,7 +6,7 @@ import base64
 GOOGLE_API_KEY = "AIzaSyDeyyPqwixP9TyuVXZ3Ay8lhEZwCGGWQAg"
 genai.configure(api_key=GOOGLE_API_KEY)
 
-MODEL_NAME = "gemini-1.5-flash" 
+MODEL_NAME = "gemini-2.5-flash" 
 model = genai.GenerativeModel(MODEL_NAME)
 
 # --- 2. INITIALIZE MEMORY ---
@@ -36,25 +36,30 @@ st.markdown("""
         width: 90%;
     }
 
-    /* Floating Action Button Styling */
+    /* Centered Floating Action Button Container */
     .fab-container {
         position: fixed;
-        bottom: 30px;
-        right: 30px;
+        bottom: 10px; /* 10px padding from bottom */
+        left: 50%;
+        transform: translateX(-50%);
         z-index: 999;
     }
     
-    /* Style the button to be a white circle with black text */
+    /* Small, Thick, Rounded White Circle Button */
     .stButton button[kind="primary"] {
         background-color: white !important;
         color: black !important;
         border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        font-size: 30px !important;
-        font-weight: bold !important;
+        width: 50px !important; /* Smaller size */
+        height: 50px !important; /* Smaller size */
+        font-size: 28px !important; /* Thick icon size */
+        font-weight: 900 !important; /* Extra thick */
         border: none !important;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-bottom: 4px !important; /* Fine-tune cross alignment */
     }
     </style>
     """, unsafe_allow_html=True)
@@ -95,7 +100,6 @@ if st.session_state.current_chat_bot:
             </style>
             """, unsafe_allow_html=True)
 
-    # Top Navigation Bar
     c1, c2, c3 = st.columns([1, 3, 1])
     with c1:
         if st.button("⬅️"):
@@ -109,7 +113,6 @@ if st.session_state.current_chat_bot:
             st.session_state.messages = []
             st.rerun()
 
-    # Display Chat
     for message in st.session_state.messages:
         msg_avatar = bot.get('pic') if message["role"] == "assistant" else "👤"
         with st.chat_message(message["role"], avatar=msg_avatar):
@@ -163,7 +166,7 @@ else:
     else:
         st.info("Welcome to the PolyClone Beta.")
 
-    # FLOATING ACTION BUTTON
+    # FLOATING ACTION BUTTON (Centered)
     st.markdown('<div class="fab-container">', unsafe_allow_html=True)
     if st.button("＋", key="fab", type="primary"):
         create_character()
