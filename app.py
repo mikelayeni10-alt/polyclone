@@ -6,7 +6,7 @@ import base64
 GOOGLE_API_KEY = "AIzaSyDeyyPqwixP9TyuVXZ3Ay8lhEZwCGGWQAg"
 genai.configure(api_key=GOOGLE_API_KEY)
 
-MODEL_NAME = "gemini-1.5-flash" 
+MODEL_NAME = "gemini-2.5-flash" 
 model = genai.GenerativeModel(MODEL_NAME)
 
 # --- 2. INITIALIZE MEMORY ---
@@ -36,39 +36,39 @@ st.markdown("""
         width: 90%;
     }
 
-    /* THE FAB CONTAINER - FORCED CENTER BOTTOM */
+    /* THE FAB CONTAINER - PINNED TO THE VERY BOTTOM */
     .fab-wrapper {
         position: fixed !important;
-        bottom: 25px !important; 
+        bottom: 10px !important; /* Minimal space from the very bottom edge */
         left: 0 !important;
         width: 100% !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
         z-index: 999999 !important;
-        pointer-events: none !important; /* This allows you to click things behind the container */
+        pointer-events: none !important;
     }
     
-    /* The Actual Button Style */
+    /* The Button Style */
     .fab-wrapper button {
-        pointer-events: auto !important; /* Re-enables clicking for the button only */
+        pointer-events: auto !important;
         background-color: white !important;
         color: black !important;
         border-radius: 50% !important;
-        width: 55px !important; 
-        height: 55px !important;
-        min-width: 55px !important;
-        max-width: 55px !important;
+        width: 50px !important; 
+        height: 50px !important;
+        min-width: 50px !important;
+        max-width: 50px !important;
         font-size: 32px !important; 
         font-weight: bold !important;
         border: none !important;
-        box-shadow: 0px 5px 20px rgba(0,0,0,0.6) !important;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.6) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         padding: 0 !important;
         line-height: 0 !important;
-        padding-bottom: 4px !important; /* Centers the '+' vertically */
+        padding-bottom: 4px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -175,8 +175,8 @@ else:
     else:
         st.info("Welcome to the PolyClone Beta.")
 
-    # THE CENTERED FAB
+    # THE CENTERED FAB AT THE VERY BOTTOM
     st.markdown('<div class="fab-wrapper">', unsafe_allow_html=True)
-    if st.button("＋", key="center_fab"):
+    if st.button("＋", key="bottom_fab"):
         create_character()
     st.markdown('</div>', unsafe_allow_html=True)
