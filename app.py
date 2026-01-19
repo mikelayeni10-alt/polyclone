@@ -9,7 +9,7 @@ GOOGLE_API_KEY = "AIzaSyDeyyPqwixP9TyuVXZ3Ay8lhEZwCGGWQAg"
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # FIXED: Using the stable model name
-MODEL_NAME = "gemini-1.5-flash" 
+MODEL_NAME = "gemini-2.5-flash" 
 model = genai.GenerativeModel(MODEL_NAME)
 
 # --- 2. INITIALIZE MEMORY ---
