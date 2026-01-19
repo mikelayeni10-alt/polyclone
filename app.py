@@ -26,48 +26,32 @@ st.markdown("""
     footer {visibility: hidden !important;}
     header {visibility: hidden !important;}
     
-    /* Chat bubble styling */
-    [data-testid="stChatMessage"] {
-        border-radius: 15px; 
-        border: 1px solid #9d50bb;
-        background-color: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(5px);
-        margin-bottom: 10px;
-        width: 90%;
-    }
-
-    /* THE FAB CONTAINER - PINNED TO THE VERY BOTTOM */
-    .fab-wrapper {
+    /* THE FIX: Force the container to the very bottom of the viewport */
+    .bottom-button-container {
         position: fixed !important;
-        bottom: 10px !important; /* Minimal space from the very bottom edge */
+        bottom: 20px !important;
         left: 0 !important;
-        width: 100% !important;
+        right: 0 !important;
         display: flex !important;
         justify-content: center !important;
-        align-items: center !important;
-        z-index: 999999 !important;
+        z-index: 1000000 !important;
         pointer-events: none !important;
     }
-    
-    /* The Button Style */
-    .fab-wrapper button {
+
+    .bottom-button-container button {
         pointer-events: auto !important;
         background-color: white !important;
         color: black !important;
         border-radius: 50% !important;
-        width: 50px !important; 
-        height: 50px !important;
-        min-width: 50px !important;
-        max-width: 50px !important;
-        font-size: 32px !important; 
+        width: 55px !important;
+        height: 55px !important;
+        font-size: 30px !important;
         font-weight: bold !important;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.5) !important;
         border: none !important;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.6) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        padding: 0 !important;
-        line-height: 0 !important;
         padding-bottom: 4px !important;
     }
     </style>
@@ -83,31 +67,19 @@ def create_character():
     if st.button("Save & Launch ✨", use_container_width=True):
         if name and pers and user_pic:
             st.session_state.my_bots.append({
-                "name": name, 
-                "persona": pers, 
-                "pic": user_pic.getvalue()
+                "name": name, "persona": pers, "pic": user_pic.getvalue()
             })
             st.rerun()
         else:
-            st.error("Fill in all fields and upload an image!")
+            st.error("Fill in all fields!")
 
 # --- 5. APP LOGIC ---
 
-# CHAT SCREEN
 if st.session_state.current_chat_bot:
     bot = st.session_state.current_chat_bot
-    
     if bot.get('pic'):
         bin_str = base64.b64encode(bot['pic']).decode()
-        st.markdown(f"""
-            <style>
-            .stApp {{
-                background-image: linear-gradient(rgba(15, 12, 41, 0.85), rgba(15, 12, 41, 0.85)), url("data:image/png;base64,{bin_str}");
-                background-size: cover;
-                background-attachment: fixed;
-            }}
-            </style>
-            """, unsafe_allow_html=True)
+        st.markdown(f"<style>.stApp {{background-image: linear-gradient(rgba(15, 12, 41, 0.85), rgba(15, 12, 41, 0.85)), url('data:image/png;base64,{bin_str}'); background-size: cover; background-attachment: fixed;}}</style>", unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns([1, 3, 1])
     with c1:
@@ -115,40 +87,28 @@ if st.session_state.current_chat_bot:
             st.session_state.current_chat_bot = None
             st.session_state.messages = []
             st.rerun()
-    with c2:
-        st.write(f"### {bot['name']}")
+    with c2: st.write(f"### {bot['name']}")
     with c3:
         if st.button("🧹"):
             st.session_state.messages = []
             st.rerun()
 
     for message in st.session_state.messages:
-        msg_avatar = bot.get('pic') if message["role"] == "assistant" else "👤"
-        with st.chat_message(message["role"], avatar=msg_avatar):
+        with st.chat_message(message["role"], avatar=bot.get('pic') if message["role"] == "assistant" else "👤"):
             st.markdown(message["content"])
 
     if prompt := st.chat_input(f"Chat with {bot['name']}..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user", avatar="👤"):
-            st.markdown(prompt)
-        
+        with st.chat_message("user", avatar="👤"): st.markdown(prompt)
         with st.chat_message("assistant", avatar=bot.get('pic')):
             try:
-                history = []
-                for m in st.session_state.messages[:-1]: 
-                    role = "user" if m["role"] == "user" else "model"
-                    history.append({"role": role, "parts": [m["content"]]})
-                
+                history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
                 chat_session = model.start_chat(history=history)
-                full_prompt = f"(System: You are {bot['name']}. Persona: {bot['persona']}) {prompt}"
-                response = chat_session.send_message(full_prompt)
-                
+                response = chat_session.send_message(f"(System: You are {bot['name']}. Persona: {bot['persona']}) {prompt}")
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
-            except Exception as e:
-                st.error(f"Error: {e}")
+            except Exception as e: st.error(f"Error: {e}")
 
-# MENU SCREEN
 else:
     st.title("🤖 PolyClone")
     menu = st.segmented_control("Navigation", ["Explore", "My Bots"], default="My Bots")
@@ -157,12 +117,10 @@ else:
     if menu == "My Bots":
         if not st.session_state.my_bots:
             st.info("No bots found. Tap the + to create one!")
-        
         for index, b in enumerate(st.session_state.my_bots):
             with st.container(border=True):
                 col_img, col_txt, col_del = st.columns([1, 3, 1])
-                with col_img:
-                    st.image(b['pic'], width=50)
+                with col_img: st.image(b['pic'], width=50)
                 with col_txt:
                     st.write(f"**{b['name']}**")
                     if st.button(f"Chat", key=f"chat_{index}"):
@@ -172,11 +130,9 @@ else:
                     if st.button("🗑️", key=f"del_{index}"):
                         st.session_state.my_bots.pop(index)
                         st.rerun()
-    else:
-        st.info("Welcome to the PolyClone Beta.")
-
-    # THE CENTERED FAB AT THE VERY BOTTOM
-    st.markdown('<div class="fab-wrapper">', unsafe_allow_html=True)
-    if st.button("＋", key="bottom_fab"):
+    
+    # THE FLOATING BUTTON AT THE VERY BOTTOM GLASS
+    st.markdown('<div class="bottom-button-container">', unsafe_allow_html=True)
+    if st.button("＋", key="fixed_plus_btn"):
         create_character()
     st.markdown('</div>', unsafe_allow_html=True)
